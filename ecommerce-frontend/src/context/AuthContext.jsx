@@ -1,0 +1,40 @@
+import { createContext, useState, useEffect } from "react";
+
+export const AuthContext = createContext();
+
+function AuthProvider({ children }) {
+  const [user, setUser] = useState(null);
+
+  // Auto login if data exists
+  useEffect(() => {
+    const savedUser = localStorage.getItem("user");
+    if (savedUser) {
+      setUser(JSON.parse(savedUser));
+    }
+  }, []);
+
+  const login = (email) => {
+    const userData = { email };
+    setUser(userData);
+    localStorage.setItem("user", JSON.stringify(userData));
+  };
+
+  const signup = (email) => {
+    const userData = { email };
+    setUser(userData);
+    localStorage.setItem("user", JSON.stringify(userData));
+  };
+
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem("user");
+  };
+
+  return (
+    <AuthContext.Provider value={{ user, login, signup, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export default AuthProvider;
