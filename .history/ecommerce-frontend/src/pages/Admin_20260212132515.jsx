@@ -1,0 +1,212 @@
+import { useState, useEffect } from "react";
+
+function Admin() {
+  const [view, setView] = useState("add"); // add | products
+  const [editingId, setEditingId] = useState(null);
+
+  const [product, setProduct] = useState({
+    name: "",
+    price: "",
+    description: "",
+    image: "",
+  });
+
+  const [products, setProducts] = useState([]);
+
+  const fetchProducts = () => {
+    fetch("http://localhost:5000/api/products")
+      .then((res) => res.json())
+      .then((data) => setProducts(data));
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const handleChange = (e) => {
+    setProduct({ ...product, [e.target.name]: e.target.value });
+  };
+
+  const addProduct = async (e) => {
+    e.preventDefault();
+
+    await fetch("http://localhost:5000/api/products", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...product,
+        price: Number(product.price),
+      }),
+    });
+
+    setProduct({ name: "", price: "", description: "", image: "" });
+    fetchProducts();
+  };
+
+  const deleteProduct = async (id) => {
+    await fetch(`http://localhost:5000/api/products/${id}`, {
+      method: "DELETE",
+    });
+    fetchProducts();
+  };
+
+  const startEdit = (p) => {
+    setEditingId(p.id);
+    setProduct(p);
+    setView("add");
+  };
+
+  const updateProduct = async (e) => {
+    e.preventDefault();
+
+    await fetch(`http://localhost:5000/api/products/${editingId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...product,
+        price: Number(product.price),
+      }),
+    });
+
+    setEditingId(null);
+    setProduct({ name: "", price: "", description: "", image: "" });
+    fetchProducts();
+  };
+
+  return (
+    <div style={styles.page}>
+      <div style={styles.navButtons}>
+        <button onClick={() => setView("add")}>Add Product</button>
+        <button onClick={() => setView("products")}>Products</button>
+      </div>
+
+      {view === "add" && (
+        <div style={styles.card}>
+          <h2>{editingId ? "Edit Product" : "Add New Product"}</h2>
+
+          <form onSubmit={editingId ? updateProduct : addProduct}>
+            <input
+              name="name"
+              placeholder="Product Name"
+              value={product.name}
+              onChange={handleChange}
+              required
+            />
+
+            <input
+              name="price"
+              placeholder="Price"
+              value={product.price}
+              onChange={handleChange}
+              required
+            />
+
+            <textarea
+              name="description"
+              placeholder="Description"
+              value={product.description}
+              onChange={handleChange}
+            />
+
+            <input
+              name="image"
+              placeholder="Image URL"
+              value={product.image}
+              onChange={handleChange}
+            />
+
+            <button type="submit">
+              {editingId ? "Update Product" : "Add Product"}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {view === "products" && (
+        <div style={styles.grid}>
+          {products.map((p) => (
+            <div key={p.id} style={styles.productCard}>
+              <img src={p.image} alt={p.name} style={styles.image} />
+              <h3>{p.name}</h3>
+              <p>₹{p.price}</p>
+
+              <div style={styles.actions}>
+                <button
+                  style={styles.editBtn}
+                  onClick={() => startEdit(p)}
+                >
+                  Edit
+                </button>
+
+                <button
+                  style={styles.deleteBtn}
+                  onClick={() => deleteProduct(p.id)}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const styles = {
+  page: {
+    padding: "40px",
+    background: "#f4f6f9",
+    minHeight: "100vh",
+  },
+  navButtons: {
+    marginBottom: "20px",
+    display: "flex",
+    gap: "10px",
+  },
+  card: {
+    background: "white",
+    padding: "20px",
+    borderRadius: "10px",
+    maxWidth: "400px",
+  },
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+    gap: "20px",
+  },
+  productCard: {
+    background: "white",
+    padding: "15px",
+    borderRadius: "8px",
+    boxShadow: "0 4px 10px rgba(0,0,0,0.08)",
+    textAlign: "center",
+  },
+  image: {
+    width: "100%",
+    height: "180px",
+    objectFit: "cover",
+    borderRadius: "6px",
+  },
+  actions: {
+    marginTop: "10px",
+    display: "flex",
+    justifyContent: "space-between",
+  },
+  editBtn: {
+    background: "#2196f3",
+    color: "white",
+    border: "none",
+    padding: "5px 10px",
+    cursor: "pointer",
+  },
+  deleteBtn: {
+    background: "red",
+    color: "white",
+    border: "none",
+    padding: "5px 10px",
+    cursor: "pointer",
+  },
+};
+
+export default Admin;
